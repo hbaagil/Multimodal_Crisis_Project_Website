@@ -2,9 +2,44 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
+import base64
 
 import streamlit as st
 import requests
+
+import streamlit as st
+import base64
+
+import streamlit as st
+import base64
+
+import streamlit as st
+import base64
+
+@st.cache(allow_output_mutation=True)
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_jpg_as_page_bg(jpg_file):
+    bin_str = get_base64_of_bin_file(jpg_file)
+    page_bg_img = '''
+    <style>
+    .stApp {
+        background-image: url("data:image/jpeg;base64,%s");
+        background-size: cover;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    </style>
+    ''' % bin_str
+
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+set_jpg_as_page_bg('76827.jpg')
+
 
 st.title("Crisis Helper 🚨")
 
@@ -21,7 +56,7 @@ with st.form(key='params_for_api'):
 # Check which button was clicked and handle the request accordingly
 if text_classification_button:
     params = dict(tweet=tweet)
-    api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict'
+    api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_binary'
 
     # Send a GET request to the API
     response = requests.get(api_url, params=params)
@@ -86,7 +121,7 @@ if st.button("Start Simulation"):
         st.write(row['tweet_text'])
 
         params = dict(tweet=row['tweet_text'])
-        api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict'
+        api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_binary'
 
         try:
             # Send a GET request to the API
@@ -108,3 +143,13 @@ if st.button("Start Simulation"):
 # Add a stop button to end the simulation
 if st.button("Stop Simulation"):
     st.warning("Simulation stopped.")
+
+# Add a container div for the attribution link
+st.markdown(
+    """
+    <div style="position: absolute; bottom: 0; right: 0; padding: 10px;">
+        <a href="http://www.freepik.com" style="color: #555;">Designed by rawpixel.com / Freepik</a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
