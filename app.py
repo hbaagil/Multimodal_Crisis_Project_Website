@@ -31,6 +31,9 @@ set_jpg_as_page_bg('76827.jpg')
 
 st.title("Crisis Helper 🚨")
 
+import streamlit as st
+import requests
+
 # Create a single form for both text and image classification
 with st.form(key='params_for_api'):
     st.markdown("### Text classification for disaster-related event 👇")
@@ -43,7 +46,7 @@ with st.form(key='params_for_api'):
 
 # Check which button was clicked and handle the request accordingly
 if text_classification_button:
-    # Unique values for classification
+    # Handle text classification here
     unique_labels = [
         'other_relevant_information',
         'not_humanitarian',
@@ -55,7 +58,6 @@ if text_classification_button:
         'missing_or_found_people'
     ]
 
-    # Dictionary mapping labels to messages
     label_messages = {
         'other_relevant_information': "This text is about other relevant information.",
         'not_humanitarian': "This text is not related to humanitarian aid.",
@@ -67,19 +69,15 @@ if text_classification_button:
         'missing_or_found_people': "This text involves missing or found people."
     }
 
-    # Set up API parameters
     params = {'tweet': tweet}
     api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_multi'
 
-    # Send a GET request to the API
     response = requests.get(api_url, params=params)
 
-    # Check if the API request was successful
     if response.status_code == 200:
         result = response.json()
         st.success("Text Classification Prediction Result:")
 
-        # Extract and directly use the prediction from the list
         prediction = result.get("tweet_class")[0]
 
         if prediction in unique_labels:
@@ -93,10 +91,52 @@ if text_classification_button:
     else:
         st.error("Text classification prediction failed. Please try again later.")
 
-
 if image_classification_button:
     # Handle image classification here
-    st.info("Image classification.")
+        # Handle text classification here
+    unique_labels = [
+        'other_relevant_information',
+        'not_humanitarian',
+        'rescue_volunteering_or_donation_effort',
+        'infrastructure_and_utility_damage',
+        'injured_or_dead_people',
+        'affected_individuals',
+        'vehicle_damage',
+        'missing_or_found_people'
+    ]
+
+    label_messages = {
+        'other_relevant_information': "This image is about other relevant information.",
+        'not_humanitarian': "This image is not related to humanitarian aid.",
+        'rescue_volunteering_or_donation_effort': "This image contains information about rescue, volunteering, or donation efforts.",
+        'infrastructure_and_utility_damage': "This image discusses infrastructure and utility damage.",
+        'injured_or_dead_people': "This image mentions injured or dead individuals.",
+        'affected_individuals': "This image is related to affected individuals.",
+        'vehicle_damage': "This image indicates vehicle damage.",
+        'missing_or_found_people': "This image involves missing or found people."
+    }
+    if img_file_buffer is not None:
+        files = {'img': img_file_buffer.read()}
+        api_url_image = 'https://crisishelper-qlahvylymq-ew.a.run.app/upload_image'
+
+        response = requests.post(api_url_image, files=files)
+
+        if response.status_code == 200:
+            result = response.json()
+            st.success("Image Classification Prediction Result:")
+
+            prediction = result.get("img_class")[0]
+
+            if prediction in unique_labels:
+                if prediction in label_messages:
+                    message = label_messages[prediction]
+                    st.markdown(f"**{message}**")
+                else:
+                    st.error("No message defined for this prediction label.")
+            else:
+                st.error("Invalid prediction value received from the API.")
+        else:
+            st.error("Image classification prediction failed. Please try again later.")
 
 
 # Function to simulate real time prediction
