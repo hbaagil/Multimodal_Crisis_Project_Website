@@ -4,18 +4,6 @@ import requests
 import time
 import base64
 
-import streamlit as st
-import requests
-
-import streamlit as st
-import base64
-
-import streamlit as st
-import base64
-
-import streamlit as st
-import base64
-
 @st.cache(allow_output_mutation=True)
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -55,8 +43,33 @@ with st.form(key='params_for_api'):
 
 # Check which button was clicked and handle the request accordingly
 if text_classification_button:
-    params = dict(tweet=tweet)
-    api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_binary'
+    # Unique values for classification
+    unique_labels = [
+        'other_relevant_information',
+        'not_humanitarian',
+        'rescue_volunteering_or_donation_effort',
+        'infrastructure_and_utility_damage',
+        'injured_or_dead_people',
+        'affected_individuals',
+        'vehicle_damage',
+        'missing_or_found_people'
+    ]
+
+    # Dictionary mapping labels to messages
+    label_messages = {
+        'other_relevant_information': "This text is about other relevant information.",
+        'not_humanitarian': "This text is not related to humanitarian aid.",
+        'rescue_volunteering_or_donation_effort': "This text contains information about rescue, volunteering, or donation efforts.",
+        'infrastructure_and_utility_damage': "This text discusses infrastructure and utility damage.",
+        'injured_or_dead_people': "This text mentions injured or dead individuals.",
+        'affected_individuals': "This text is related to affected individuals.",
+        'vehicle_damage': "This text indicates vehicle damage.",
+        'missing_or_found_people': "This text involves missing or found people."
+    }
+
+    # Set up API parameters
+    params = {'tweet': tweet}
+    api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_multi'
 
     # Send a GET request to the API
     response = requests.get(api_url, params=params)
@@ -69,14 +82,17 @@ if text_classification_button:
         # Extract and directly use the prediction from the list
         prediction = result.get("tweet_class")[0]
 
-        if prediction == 'informative':
-            st.markdown('<span style="color: green; font-weight: bold; font-size: 20px;">🚨 The text is informative for humanitarian aid and belongs to....</span>', unsafe_allow_html=True)
-        elif prediction == 'not informative':
-            st.markdown("**The text is not informative for humanitarian aid.**")
+        if prediction in unique_labels:
+            if prediction in label_messages:
+                message = label_messages[prediction]
+                st.markdown(f"**{message}**")
+            else:
+                st.error("No message defined for this prediction label.")
         else:
-            st.error("Invalid prediction value.")
+            st.error("Invalid prediction value received from the API.")
     else:
         st.error("Text classification prediction failed. Please try again later.")
+
 
 if image_classification_button:
     # Handle image classification here
@@ -85,26 +101,49 @@ if image_classification_button:
 
 # Function to simulate real time prediction
 def style_and_display_result(result):
+    # Unique values for classification
+    unique_labels = [
+        'other_relevant_information',
+        'not_humanitarian',
+        'rescue_volunteering_or_donation_effort',
+        'infrastructure_and_utility_damage',
+        'injured_or_dead_people',
+        'affected_individuals',
+        'vehicle_damage',
+        'missing_or_found_people'
+    ]
+
+    # Dictionary mapping labels to messages
+    label_messages = {
+        'other_relevant_information': "This text is about other relevant information.",
+        'not_humanitarian': "This text is not related to humanitarian aid.",
+        'rescue_volunteering_or_donation_effort': "This text contains information about rescue, volunteering, or donation efforts.",
+        'infrastructure_and_utility_damage': "This text discusses infrastructure and utility damage.",
+        'injured_or_dead_people': "This text mentions injured or dead individuals.",
+        'affected_individuals': "This text is related to affected individuals.",
+        'vehicle_damage': "This text indicates vehicle damage.",
+        'missing_or_found_people': "This text involves missing or found people."
+    }
+
     print("API Response:", result)  # Debug print to see the API response
+
+    # Extract and directly use the prediction from the list
+    prediction = result.get("tweet_class")[0]
 
     if 'tweet_class' in result:
         tweet_class = result['tweet_class'][0]
         print("Classification Result:", tweet_class)  # Debug print to see the classification result
 
-        if tweet_class == 'informative':
-            message = "The information provided is useful for humanitarian aid."
-            # Style and display the message with red color for informative tweets
-            st.markdown(f'<div style="color: red; font-weight: bold; font-size: 20px;">{message}</div>', unsafe_allow_html=True)
-        elif tweet_class == 'not informative':
-            message = "The information provided is not useful for humanitarian aid."
-            # Style and display the message with black color for not informative tweets
-            st.markdown(f'<div style="color: black; font-weight: bold; font-size: 20px;">{message}</div>', unsafe_allow_html=True)
+        if prediction in unique_labels:
+            if prediction in label_messages:
+                message = label_messages[prediction]
+                st.markdown(f"**{message}**")
+            else:
+                st.error("No message defined for this prediction label.")
         else:
-            message = "Unknown classification result."
-            # Style and display the message with a neutral color for unknown results
-            st.markdown(f'<div style="font-weight: bold; font-size: 20px;">{message}</div>', unsafe_allow_html=True)
+            st.error("Invalid prediction value received from the API.")
     else:
-        st.error("Prediction result is missing 'tweet_class' key.")
+        st.error("Text classification prediction failed. Please try again later.")
 
 st.title("Crisis Helper Real-Time Simulation 🌐")
 
@@ -121,7 +160,7 @@ if st.button("Start Simulation"):
         st.write(row['tweet_text'])
 
         params = dict(tweet=row['tweet_text'])
-        api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_binary'
+        api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_multi'
 
         try:
             # Send a GET request to the API
