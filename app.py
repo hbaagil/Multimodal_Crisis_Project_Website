@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import time
 import base64
+import os
 
 @st.cache(allow_output_mutation=True)
 def get_base64_of_bin_file(bin_file):
@@ -29,22 +30,37 @@ def set_jpg_as_page_bg(jpg_file):
 set_jpg_as_page_bg('76827.jpg')
 
 
-st.title("Crisis Helper 🚨")
+# Styling the app title with added space and centering
+st.markdown("<h1 style='text-align: center;'><b>Crisis Helper 🚨</b></h1>", unsafe_allow_html=True)
 
-import streamlit as st
-import requests
+# Adding space after the title
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Styling the app description with enhanced formatting and design
+description = """
+<div style='font-size: 20px; color: #444; text-align: center;'>
+    <b><i>Classification of crisis-related content to facilitate rapid resource allocation</i></b>
+</div>
+"""
+
+st.markdown(description, unsafe_allow_html=True)
+
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # Create a single form for both text and image classification
 with st.form(key='params_for_api'):
-    st.markdown("### Text classification for disaster-related event 👇")
+    st.markdown("### Crisis-Helper Text Classifier")
     tweet = st.text_input('What is your tweet?', '')
-    text_classification_button = st.form_submit_button('Make text classification prediction')
+    text_classification_button = st.form_submit_button('Classify Text')
+    text_prediction_output = st.empty()  # Placeholder for text classification output
 
-    st.markdown("### Image classification for disaster-related event 👇")
+    st.markdown("### Crisis-Helper Image Classifier")
     img_file_buffer = st.file_uploader('Upload an image')
-    image_classification_button = st.form_submit_button('Make image classification prediction')
+    image_classification_button = st.form_submit_button('Classify Image')
+    image_prediction_output = st.empty()  # Placeholder for image classification output
 
-# Check which button was clicked and handle the request accordingly
+
 if text_classification_button:
     # Handle text classification here
     unique_labels = [
@@ -59,14 +75,14 @@ if text_classification_button:
     ]
 
     label_messages = {
-        'other_relevant_information': "This text is about other relevant information.",
-        'not_humanitarian': "This text is not related to humanitarian aid.",
-        'rescue_volunteering_or_donation_effort': "This text contains information about rescue, volunteering, or donation efforts.",
-        'infrastructure_and_utility_damage': "This text discusses infrastructure and utility damage.",
-        'injured_or_dead_people': "This text mentions injured or dead individuals.",
-        'affected_individuals': "This text is related to affected individuals.",
-        'vehicle_damage': "This text indicates vehicle damage.",
-        'missing_or_found_people': "This text involves missing or found people."
+        'other_relevant_information': "Relevant information",
+        'not_humanitarian': "Not related to humanitarian aid",
+        'rescue_volunteering_or_donation_effort': "Information about rescue, volunteering, or donation efforts",
+        'infrastructure_and_utility_damage': "Infrastructure and utility damage",
+        'injured_or_dead_people': "Injured or dead individuals",
+        'affected_individuals': "Affected individuals",
+        'vehicle_damage': "Vehicle damage",
+        'missing_or_found_people': "Missing or found people"
     }
 
     params = {'tweet': tweet}
@@ -76,24 +92,32 @@ if text_classification_button:
 
     if response.status_code == 200:
         result = response.json()
-        st.success("Text Classification Prediction Result:")
 
         prediction = result.get("tweet_class")[0]
 
         if prediction in unique_labels:
             if prediction in label_messages:
                 message = label_messages[prediction]
-                st.markdown(f"**{message}**")
+                if prediction == 'not_humanitarian':
+                    text_prediction_output.markdown(
+                        f"<p style='font-size: 18px; color: blue;font-weight: bold;'>{message}</p>",
+                        unsafe_allow_html=True
+                    )
+                else:
+                    text_prediction_output.markdown(
+                        f"<p style='font-size: 18px; color: red; font-weight: bold;'>🚨{message}🚨</p>",
+                        unsafe_allow_html=True
+                    )
             else:
-                st.error("No message defined for this prediction label.")
+                text_prediction_output.error("No message defined for this prediction label.")
         else:
-            st.error("Invalid prediction value received from the API.")
+            text_prediction_output.error("Invalid prediction value received from the API.")
     else:
-        st.error("Text classification prediction failed. Please try again later.")
+        text_prediction_output.error("Text classification prediction failed. Please try again later.")
+
 
 if image_classification_button:
     # Handle image classification here
-        # Handle text classification here
     unique_labels = [
         'other_relevant_information',
         'not_humanitarian',
@@ -104,17 +128,17 @@ if image_classification_button:
         'vehicle_damage',
         'missing_or_found_people'
     ]
-
     label_messages = {
-        'other_relevant_information': "This image is about other relevant information.",
-        'not_humanitarian': "This image is not related to humanitarian aid.",
-        'rescue_volunteering_or_donation_effort': "This image contains information about rescue, volunteering, or donation efforts.",
-        'infrastructure_and_utility_damage': "This image discusses infrastructure and utility damage.",
-        'injured_or_dead_people': "This image mentions injured or dead individuals.",
-        'affected_individuals': "This image is related to affected individuals.",
-        'vehicle_damage': "This image indicates vehicle damage.",
-        'missing_or_found_people': "This image involves missing or found people."
+        'other_relevant_information': "Relevant information",
+        'not_humanitarian': "Not related to humanitarian aid",
+        'rescue_volunteering_or_donation_effort': "Information about rescue, volunteering, or donation efforts",
+        'infrastructure_and_utility_damage': "Infrastructure and utility damage",
+        'injured_or_dead_people': "Injured or dead individuals",
+        'affected_individuals': "Affected individuals",
+        'vehicle_damage': "Vehicle damage",
+        'missing_or_found_people': "Missing or found people"
     }
+
     if img_file_buffer is not None:
         files = {'img': img_file_buffer.read()}
         api_url_image = 'https://crisishelper-qlahvylymq-ew.a.run.app/upload_image'
@@ -123,81 +147,75 @@ if image_classification_button:
 
         if response.status_code == 200:
             result = response.json()
-            st.success("Image Classification Prediction Result:")
 
             prediction = result.get("img_class")[0]
 
             if prediction in unique_labels:
                 if prediction in label_messages:
                     message = label_messages[prediction]
-                    st.markdown(f"**{message}**")
+                    st.image(img_file_buffer, use_column_width=True)  # Display the image
+
+                    if prediction == 'not_humanitarian':
+                        st.markdown(
+                            f"<p style='font-size: 18px; color: blue;'>{message}</p>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            f"<p style='font-size: 18px; color: red; font-weight: bold;'>🚨{message}🚨</p>",
+                            unsafe_allow_html=True
+                        )
                 else:
-                    st.error("No message defined for this prediction label.")
+                    image_prediction_output.error("No message defined for this prediction label.")
             else:
-                st.error("Invalid prediction value received from the API.")
+                image_prediction_output.error("Invalid prediction value received from the API.")
         else:
-            st.error("Image classification prediction failed. Please try again later.")
+            image_prediction_output.error("Image classification prediction failed. Please try again later.")
 
 
-# Function to simulate real time prediction
-def style_and_display_result(result):
-    # Unique values for classification
-    unique_labels = [
-        'other_relevant_information',
-        'not_humanitarian',
-        'rescue_volunteering_or_donation_effort',
-        'infrastructure_and_utility_damage',
-        'injured_or_dead_people',
-        'affected_individuals',
-        'vehicle_damage',
-        'missing_or_found_people'
-    ]
 
-    # Dictionary mapping labels to messages
-    label_messages = {
-        'other_relevant_information': "This text is about other relevant information.",
-        'not_humanitarian': "This text is not related to humanitarian aid.",
-        'rescue_volunteering_or_donation_effort': "This text contains information about rescue, volunteering, or donation efforts.",
-        'infrastructure_and_utility_damage': "This text discusses infrastructure and utility damage.",
-        'injured_or_dead_people': "This text mentions injured or dead individuals.",
-        'affected_individuals': "This text is related to affected individuals.",
-        'vehicle_damage': "This text indicates vehicle damage.",
-        'missing_or_found_people': "This text involves missing or found people."
-    }
+# Unique values for classification
+unique_labels = [
+    'other_relevant_information',
+    'not_humanitarian',
+    'rescue_volunteering_or_donation_effort',
+    'infrastructure_and_utility_damage',
+    'injured_or_dead_people',
+    'affected_individuals',
+    'vehicle_damage',
+    'missing_or_found_people'
+]
 
-    print("API Response:", result)  # Debug print to see the API response
+label_messages = {
+    'other_relevant_information': "Relevant information",
+    'not_humanitarian': "Not related to humanitarian aid",
+    'rescue_volunteering_or_donation_effort': "Information about rescue, volunteering, or donation efforts",
+    'infrastructure_and_utility_damage': "Infrastructure and utility damage",
+    'injured_or_dead_people': "Injured or dead individuals",
+    'affected_individuals': "Affected individuals",
+    'vehicle_damage': "Vehicle damage",
+    'missing_or_found_people': "Missing or found people"
+}
 
-    # Extract and directly use the prediction from the list
-    prediction = result.get("tweet_class")[0]
+st.markdown("<h1><b>Crisis Helper Real-Time 🌐</b></h1>", unsafe_allow_html=True)
 
-    if 'tweet_class' in result:
-        tweet_class = result['tweet_class'][0]
-        print("Classification Result:", tweet_class)  # Debug print to see the classification result
-
-        if prediction in unique_labels:
-            if prediction in label_messages:
-                message = label_messages[prediction]
-                st.markdown(f"**{message}**")
-            else:
-                st.error("No message defined for this prediction label.")
-        else:
-            st.error("Invalid prediction value received from the API.")
-    else:
-        st.error("Text classification prediction failed. Please try again later.")
-
-st.title("Crisis Helper Real-Time Simulation 🌐")
+# Adding space after the title
+st.markdown("<br>", unsafe_allow_html=True)
 
 # Load a DataFrame with a "tweet_text" column
 df = pd.read_csv('/media/hamzah/Ubud/code/00_Data_Science/.crisis_helper/mlops/data/raw/df_test_binary.csv')
 
 # Limit the simulation to the first 10 rows
-df = df.sample(n=10)
+df = df.sample(n=5)
 
-# Create a button to start the simulation
-if st.button("Start Simulation"):
+# Create two columns for button alignment
+col1, col2 = st.columns(2)
+
+# Create a button to start the text simulation
+if col1.button("Start Text Feed"):
     for index, row in df.iterrows():
         st.subheader("Tweet:")
-        st.write(row['tweet_text'])
+        st.write(row['tweet_text'])  # Display the tweet text
 
         params = dict(tweet=row['tweet_text'])
         api_url = 'https://crisishelper-qlahvylymq-ew.a.run.app/predict_multi'
@@ -211,7 +229,33 @@ if st.button("Start Simulation"):
             # Check if the API request was successful
             if response.status_code == 200:
                 result = response.json()
-                style_and_display_result(result)
+                prediction = result.get("tweet_class")[0]
+
+                if 'tweet_class' in result:
+                    tweet_class = result['tweet_class'][0]
+                    print("Classification Result:", tweet_class)  # Debug print to see the classification result
+
+                    if prediction in unique_labels:
+                        if prediction in label_messages:
+                            message = label_messages[prediction]
+
+                            # Introduce a 2-second delay before displaying the prediction
+                            time.sleep(2)
+
+                            if prediction == 'not_humanitarian':
+                                st.markdown(
+                                    f"<p style='font-size: 18px; color: blue;font-weight: bold;'>{message}</p>",
+                                    unsafe_allow_html=True)
+                            else:
+                                st.markdown(
+                                    f"<p style='font-size: 18px; color: red; font-weight: bold;'>🚨{message}🚨</p>",
+                                    unsafe_allow_html=True)
+                        else:
+                            st.error("No message defined for this prediction label.")
+                    else:
+                        st.error("Invalid prediction value received from the API.")
+                else:
+                    st.error("Text classification prediction failed. Please try again later.")
             else:
                 st.error("Prediction failed for this tweet. Please try again later.")
         except Exception as e:
@@ -219,16 +263,88 @@ if st.button("Start Simulation"):
 
         st.markdown("---")
 
-# Add a stop button to end the simulation
-if st.button("Stop Simulation"):
-    st.warning("Simulation stopped.")
+# Add a stop button to end the text simulation
+if col1.button("Stop Text Feed"):
+    st.warning("Feed stopped.")
 
-# Add a container div for the attribution link
-st.markdown(
-    """
-    <div style="position: absolute; bottom: 0; right: 0; padding: 10px;">
-        <a href="http://www.freepik.com" style="color: #555;">Designed by rawpixel.com / Freepik</a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+
+# Specify the directory where the images are located
+image_directory = '/media/hamzah/Ubud/code/00_Data_Science/Multimodal_Crisis_Project_Website/data/images'
+
+# Get a list of image file paths in the directory
+image_files = [os.path.join(image_directory, filename) for filename in os.listdir(image_directory) if filename.endswith(('.jpg', '.png', '.jpeg'))]
+
+# Create a button to start the image simulation
+if col2.button("Start Image Feed"):
+    unique_labels = [
+        'other_relevant_information',
+        'not_humanitarian',
+        'rescue_volunteering_or_donation_effort',
+        'infrastructure_and_utility_damage',
+        'injured_or_dead_people',
+        'affected_individuals',
+        'vehicle_damage',
+        'missing_or_found_people'
+    ]
+
+    label_messages = {
+        'other_relevant_information': "Relevant information",
+        'not_humanitarian': "Not related to humanitarian aid",
+        'rescue_volunteering_or_donation_effort': "Information about rescue, volunteering, or donation efforts",
+        'infrastructure_and_utility_damage': "Infrastructure and utility damage",
+        'injured_or_dead_people': "Injured or dead individuals",
+        'affected_individuals': "Affected individuals",
+        'vehicle_damage': "Vehicle damage",
+        'missing_or_found_people': "Missing or found people"
+    }
+
+    for image_file in image_files:
+        st.image(image_file, width=500)  # Display the image with a smaller width
+
+        # Prepare the image for API upload
+        with open(image_file, 'rb') as f:
+            img_file_buffer = f.read()
+
+        api_url_image = 'https://crisishelper-qlahvylymq-ew.a.run.app/upload_image'
+
+        try:
+            # Send a POST request to the API
+            response = requests.post(api_url_image, files={'img': img_file_buffer})
+
+            # Check if the API request was successful
+            if response.status_code == 200:
+                result = response.json()
+
+                prediction = result.get("img_class")[0]
+
+                if prediction in unique_labels:
+                    if prediction in label_messages:
+                        message = label_messages[prediction]
+
+                        # Introduce a 2-second delay before displaying the prediction
+                        time.sleep(2)
+
+                        if prediction == 'not_humanitarian':
+                            st.markdown(
+                                f"<p style='font-size: 18px; color: blue;'>{message}</p>",
+                                unsafe_allow_html=True
+                            )
+                        else:
+                            st.markdown(
+                                f"<p style='font-size: 18px; color: red; font-weight: bold;'>🚨{message}🚨</p>",
+                                unsafe_allow_html=True
+                            )
+                    else:
+                        st.error("No message defined for this prediction label.")
+                else:
+                    st.error("Invalid prediction value received from the API.")
+            else:
+                st.error("Image classification prediction failed. Please try again later.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+        st.markdown("---")
+
+# Add a stop button to end the image simulation
+if col2.button("Stop Image Feed"):
+    st.warning("Feed stopped.")
